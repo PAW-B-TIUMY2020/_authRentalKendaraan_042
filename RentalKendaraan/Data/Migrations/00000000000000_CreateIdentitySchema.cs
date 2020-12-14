@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace RentalKendaraan.Data.Migrations
+namespace RentalKendaraan_042.Data.Migrations
 {
     public partial class CreateIdentitySchema : Migration
     {

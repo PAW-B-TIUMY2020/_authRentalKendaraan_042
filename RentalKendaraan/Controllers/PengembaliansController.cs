@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using RentalKendaraan.Models;
 using RentalKendaraan_042.Models;
 
 namespace RentalKendaraan_042.Controllers
@@ -22,8 +21,8 @@ namespace RentalKendaraan_042.Controllers
         // GET: Pengembalians
         public async Task<IActionResult> Index()
         {
-            var rentalKendaraanContext = _context.Pengembalian.Include(p => p.IdKondisiNavigation).Include(p => p.IdPeminjamanNavigation);
-            return View(await rentalKendaraanContext.ToListAsync());
+            var rental_kendaraanContext = _context.Pengembalian.Include(p => p.IdKondisiNavigation).Include(p => p.IdPeminjamanNavigation);
+            return View(await rental_kendaraanContext.ToListAsync());
         }
 
         // GET: Pengembalians/Details/5

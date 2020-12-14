@@ -2,10 +2,8 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using RentalKendaraan.Models;
-using RentalKendaraan_042.Models;
 
-namespace RentalKendaraan.Models
+namespace RentalKendaraan_042.Models
 {
     public partial class RentalKendaraanContext : IdentityDbContext
     {
@@ -27,13 +25,7 @@ namespace RentalKendaraan.Models
         public virtual DbSet<Peminjaman> Peminjaman { get; set; }
         public virtual DbSet<Pengembalian> Pengembalian { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            if (!optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseSqlServer("Server=DESKTOP-LDV7NOV;Database=RentalKendaraan;Trusted_Connection=True;");
-            }
-        }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -60,7 +52,7 @@ namespace RentalKendaraan.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.NoHp)
-                    .HasColumnName("No_HP")
+                    .HasColumnName("No_Hp")
                     .HasMaxLength(13)
                     .IsUnicode(false);
 
@@ -74,9 +66,7 @@ namespace RentalKendaraan.Models
             {
                 entity.HasKey(e => e.IdGender);
 
-                entity.Property(e => e.IdGender)
-                    .HasColumnName("ID_Gender")
-                    .ValueGeneratedNever();
+                entity.Property(e => e.IdGender).HasColumnName("ID_Gender");
 
                 entity.Property(e => e.NamaGender)
                     .HasColumnName("Nama_Gender")
@@ -105,7 +95,7 @@ namespace RentalKendaraan.Models
                 entity.Property(e => e.IdJenisKendaraan).HasColumnName("ID_Jenis_Kendaraan");
 
                 entity.Property(e => e.NamaJenisKendaraan)
-                    .HasColumnName("Nama_Jenis_Kendaraan")
+                    .HasColumnName("Nama_ Jenis_Kendaraan")
                     .HasMaxLength(30)
                     .IsUnicode(false);
             });
@@ -163,7 +153,7 @@ namespace RentalKendaraan.Models
 
                 entity.Property(e => e.IdPeminjaman).HasColumnName("ID_Peminjaman");
 
-                entity.Property(e => e.IdCustomer).HasColumnName("ID_Customer");
+                entity.Property(e => e.IdCustomer).HasColumnName("ID_Costumer");
 
                 entity.Property(e => e.IdJaminan).HasColumnName("ID_Jaminan");
 
@@ -213,7 +203,7 @@ namespace RentalKendaraan.Models
                     .HasForeignKey(d => d.IdPeminjaman)
                     .HasConstraintName("FK_Pengembalian_Peminjaman");
             });
-            base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(modelBuilder);
         }
     }
 }

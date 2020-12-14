@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RentalKendaraan.Models;
 using RentalKendaraan_042.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace RentalKendaraan_042.Controllers
 {
@@ -19,38 +20,50 @@ namespace RentalKendaraan_042.Controllers
             _context = context;
         }
 
+        [Authorize(Policy = "readonlypolicy")]
+
         // GET: Peminjamen
-        public async Task<IActionResult> Index(string ktsd, string searchString, string currentFilter, int? pageNumber, string sortOrder)
+        public async Task<IActionResult> Index(string ktsd, string searchString, string sortOrder, string currentFilter, int? pageNumber)
         {
-
-            //Untuk list menyimpan ketersediaan
+            //buat list menyimpan ketersediaan
             var ktsdList = new List<string>();
-
-            //Query untuk mengambil data
+            //Query mengambil data
             var ktsdQuery = from d in _context.Peminjaman orderby d.IdKendaraanNavigation.NamaKendaraan select d.IdKendaraanNavigation.NamaKendaraan;
 
             ktsdList.AddRange(ktsdQuery.Distinct());
 
-            //Untuk menampilkan di view
+            //untuk menampilkan di view
             ViewBag.ktsd = new SelectList(ktsdList);
 
-            //Panggil db context
+            //panggil db context
             var menu = from m in _context.Peminjaman.Include(p => p.IdCustomerNavigation).Include(p => p.IdJaminanNavigation).Include(p => p.IdKendaraanNavigation) select m;
 
-            //Untuk memilih dropdownlist ketersediaan
+            //untuk memilih dropdownlist ketersediaan
             if (!string.IsNullOrEmpty(ktsd))
             {
-                menu = menu.Where(x => x.IdKendaraanNavigation.NamaKendaraan == ktsd);
+                menu = menu.Where(x => x.IdJaminanNavigation.NamaJaminan.ToString() == ktsd);
             }
 
-            //Untuk search data
+            //untuk search data
             if (!string.IsNullOrEmpty(searchString))
             {
-                menu = menu.Where(s => s.TglPeminjaman.ToString().Contains(searchString) || s.Biaya.ToString().Contains(searchString));
+                menu = menu.Where(s => s.Biaya.ToString().Contains(searchString) || s.IdCustomerNavigation.NamaCustomer.Contains(searchString) || s.IdJaminanNavigation.NamaJaminan.Contains(searchString)
+                || s.IdKendaraanNavigation.NamaKendaraan.Contains(searchString));
             }
 
-            //---------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-            //Untuk sorting
+            //membuat pagedList
+            ViewData["CurrentSort"] = sortOrder;
+            if (searchString != null)
+            {
+                pageNumber = 1;
+            }
+            else
+            {
+                searchString = currentFilter;
+            }
+            ViewData["CurrentFilter"] = searchString;
+
+            //untuk sorting
             ViewData["NameSortParm"] = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
             ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
 
@@ -62,36 +75,21 @@ namespace RentalKendaraan_042.Controllers
                 case "Date":
                     menu = menu.OrderBy(s => s.TglPeminjaman);
                     break;
-                case "data_desc":
+                case "date_desc":
                     menu = menu.OrderByDescending(s => s.TglPeminjaman);
                     break;
-                default: //name ascending
+                default: // name asscending
                     menu = menu.OrderBy(s => s.IdCustomerNavigation.NamaCustomer);
                     break;
             }
-            //---------------------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-            //---------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-            //Membuat pagedlist
-            ViewData["CurrentSort"] = sortOrder;
-
-            if (searchString != null)
-            {
-                pageNumber = 1;
-            }
-            else
-            {
-                searchString = currentFilter;
-            }
 
             ViewData["CurrentFilter"] = searchString;
-            //---------------------------------------------------------------------------------------------------------------------------------------------------------------------//
-
-            //Definisi jumlah data pada halaman
+            //definisi jumlah data pada halaman
             int pageSize = 5;
+
             return View(await PaginatedList<Peminjaman>.CreateAsync(menu.AsNoTracking(), pageNumber ?? 1, pageSize));
 
-            
         }
 
         // GET: Peminjamen/Details/5
@@ -115,12 +113,14 @@ namespace RentalKendaraan_042.Controllers
             return View(peminjaman);
         }
 
+        [Authorize(Policy = "writepolicy")]
+
         // GET: Peminjamen/Create
         public IActionResult Create()
         {
-            ViewData["IdCustomer"] = new SelectList(_context.Customer, "IdCustomer", "IdCustomer");
-            ViewData["IdJaminan"] = new SelectList(_context.Jaminan, "IdJaminan", "IdJaminan");
-            ViewData["IdKendaraan"] = new SelectList(_context.Kendaraan, "IdKendaraan", "IdKendaraan");
+            ViewData["NamaCustomer"] = new SelectList(_context.Customer, "IdCustomer", "NamaCustomer");
+            ViewData["NamaJaminan"] = new SelectList(_context.Jaminan, "IdJaminan", "NamaJaminan");
+            ViewData["NamaKendaraan"] = new SelectList(_context.Kendaraan, "IdKendaraan", "NamaKendaraan");
             return View();
         }
 
@@ -129,7 +129,7 @@ namespace RentalKendaraan_042.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("IdPeminjaman,TglPeminjaman,IdKendaraan,IdCustomer,IdJaminan,Biaya")] Peminjaman peminjaman)
+        public async Task<IActionResult> Create([Bind("IdPeminjaman,TglPeminjaman,IdKendaraan,IdCostumer,IdJaminan,Biaya")] Peminjaman peminjaman)
         {
             if (ModelState.IsValid)
             {
@@ -137,11 +137,13 @@ namespace RentalKendaraan_042.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdCustomer"] = new SelectList(_context.Customer, "IdCustomer", "IdCustomer", peminjaman.IdCustomer);
-            ViewData["IdJaminan"] = new SelectList(_context.Jaminan, "IdJaminan", "IdJaminan", peminjaman.IdJaminan);
-            ViewData["IdKendaraan"] = new SelectList(_context.Kendaraan, "IdKendaraan", "IdKendaraan", peminjaman.IdKendaraan);
+            ViewData["IdKendaraan"] = new SelectList(_context.Kendaraan, "IdKendaraan", "NamaKendaraan", peminjaman.IdKendaraan);
+            ViewData["IdCostumer"] = new SelectList(_context.Customer, "IdCustomer", "NamaCustomer", peminjaman.IdCustomer);
+            ViewData["IdJaminan"] = new SelectList(_context.Jaminan, "IdJaminan", "NamaJaminan", peminjaman.IdJaminan);
             return View(peminjaman);
         }
+
+        [Authorize(Policy = "editpolicy")]
 
         // GET: Peminjamen/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -156,9 +158,9 @@ namespace RentalKendaraan_042.Controllers
             {
                 return NotFound();
             }
-            ViewData["IdCustomer"] = new SelectList(_context.Customer, "IdCustomer", "IdCustomer", peminjaman.IdCustomer);
-            ViewData["IdJaminan"] = new SelectList(_context.Jaminan, "IdJaminan", "IdJaminan", peminjaman.IdJaminan);
-            ViewData["IdKendaraan"] = new SelectList(_context.Kendaraan, "IdKendaraan", "IdKendaraan", peminjaman.IdKendaraan);
+            ViewData["IdKendaraan"] = new SelectList(_context.Kendaraan, "IdKendaraan", "NamaKendaraan", peminjaman.IdKendaraan);
+            ViewData["IdCostumer"] = new SelectList(_context.Customer, "IdCustomer", "NamaCustomer", peminjaman.IdCustomer);
+            ViewData["IdJaminan"] = new SelectList(_context.Jaminan, "IdJaminan", "NamaJaminan", peminjaman.IdJaminan);
             return View(peminjaman);
         }
 
@@ -167,7 +169,7 @@ namespace RentalKendaraan_042.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("IdPeminjaman,TglPeminjaman,IdKendaraan,IdCustomer,IdJaminan,Biaya")] Peminjaman peminjaman)
+        public async Task<IActionResult> Edit(int id, [Bind("IdPeminjaman,TglPeminjaman,IdKendaraan,IdCostumer,IdJaminan,Biaya")] Peminjaman peminjaman)
         {
             if (id != peminjaman.IdPeminjaman)
             {
@@ -194,11 +196,13 @@ namespace RentalKendaraan_042.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdCustomer"] = new SelectList(_context.Customer, "IdCustomer", "IdCustomer", peminjaman.IdCustomer);
-            ViewData["IdJaminan"] = new SelectList(_context.Jaminan, "IdJaminan", "IdJaminan", peminjaman.IdJaminan);
-            ViewData["IdKendaraan"] = new SelectList(_context.Kendaraan, "IdKendaraan", "IdKendaraan", peminjaman.IdKendaraan);
+            ViewData["IdKendaraan"] = new SelectList(_context.Kendaraan, "IdKendaraan", "NamaKendaraan", peminjaman.IdKendaraan);
+            ViewData["IdCostumer"] = new SelectList(_context.Customer, "IdCustomer", "NamaCustomer", peminjaman.IdCustomer);
+            ViewData["IdJaminan"] = new SelectList(_context.Jaminan, "IdJaminan", "NamaJaminan", peminjaman.IdJaminan);
             return View(peminjaman);
         }
+
+        [Authorize(Policy = "deletepolicy")]
 
         // GET: Peminjamen/Delete/5
         public async Task<IActionResult> Delete(int? id)

@@ -14,8 +14,8 @@ namespace RentalKendaraan.Models
 
         public PaginatedList(List<T> items, int count, int pageIndex, int pageSize)
         {
-          
-            pageIndex = pageIndex;
+
+            PageIndex = PageIndex;
             TotalPages = (int)Math.Ceiling(count / (double)pageSize);
 
             this.AddRange(items);

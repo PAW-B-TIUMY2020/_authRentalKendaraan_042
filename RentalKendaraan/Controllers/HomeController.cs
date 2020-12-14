@@ -5,8 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using RentalKendaraan.Models;
+using RentalKendaraan_042.Models;
 
-namespace RentalKendaraan.Controllers
+namespace RentalKendaraan_042.Controllers
 {
     public class HomeController : Controller
     {

@@ -11,7 +11,6 @@ namespace RentalKendaraan_042.Models
             Peminjaman = new HashSet<Peminjaman>();
         }
 
-
         public int IdKendaraan { get; set; }
         [Required(ErrorMessage = "Nama kendaraan tidak boleh kosong!")]
         public string NamaKendaraan { get; set; }
